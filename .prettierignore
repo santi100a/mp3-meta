@@ -1,0 +1,8 @@
+yarn.lock
+.*ignore
+node_modules
+*.exe
+ignore-*.*
+*.log
+coverage
+dist

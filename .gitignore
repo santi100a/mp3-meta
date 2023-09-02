@@ -1,0 +1,5 @@
+node_modules
+*.exe
+ignore-*.*
+*.log
+coverage

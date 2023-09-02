@@ -1,0 +1,38 @@
+{
+	"name": "@santi100a/mp3-meta",
+	"version": "0.0.1",
+	"description": "Santi's MP3-Meta CLI: Add the ID3 tags!",
+	"main": "dist/index.js",
+	"bin": {
+		"mp3meta": "node dist/index.js"
+	},
+	"repository": "https://github.com/santi100a/mp3-meta",
+	"author": "santi100a <santyrojaprieto9+npm@gmail.com>",
+	"license": "MIT",
+	"devDependencies": {
+		"@types/inquirer": "^8.2.6",
+		"@typescript-eslint/eslint-plugin": "^6.5.0",
+		"@typescript-eslint/parser": "^6.5.0",
+		"eslint": "^8.48.0",
+		"prettier": "^3.0.3",
+		"remark-cli": "^11.0.0",
+		"remark-validate-links": "^12.1.1",
+		"typescript": "4.9.5"
+	},
+	"dependencies": {
+		"@santi100/coloring-lib": "^1.1.2",
+		"commander": "^11.0.0",
+		"file-type-cjs": "^1.0.7",
+		"inquirer": "8.0.0",
+		"node-id3": "^0.2.6"
+	},
+	"scripts": {
+		"lint": "eslint src/**/*.ts",
+		"build": "tsc",
+		"dev": "tsc --watch",
+		"prettify": "prettier --write **/*.*",
+		"check-links": "remark --frail *.md",
+		"validate-package-json": "node scripts/validate-package-json.js",
+		"esm-wrapper": "node scripts/esm-wrapper.js"
+	}
+}
