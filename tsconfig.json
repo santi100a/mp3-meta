@@ -1,0 +1,14 @@
+{
+	"include": ["src/**/*.ts"],
+	"exclude": ["node_modules"],
+	"compilerOptions": {
+		"strict": true,
+		"strictNullChecks": true,
+		"strictFunctionTypes": true,
+		"declaration": true,
+		"target": "ES3",
+		"module": "commonjs",
+		"outDir": "dist/",
+		"noImplicitAny": true
+	}
+}

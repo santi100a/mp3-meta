@@ -1,0 +1,31 @@
+name: Report PR build failed
+on:
+  workflow_call:
+    inputs:
+      number:
+        required: true
+        type: number
+      pr-author:
+        required: true
+        type: string
+jobs:
+  report-pr-build-failed:
+    continue-on-error: true
+    permissions:
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report the build failed
+        uses: jungwinter/comment@v1
+        with:
+          type: create
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue_number: ${{ inputs.number }}
+          body: |
+            Hi, @${{ inputs.pr-author }}! I'm afraid the CI check for PR #${{ inputs.number }} has failed!  
+            Don't worry, it'll run again if you commit any changes to this PR.
+      - name: Label PR as "CI failed"
+        uses: actions/labeler@v4
+        with:
+          sync-label: true
+          repo-token: ${{ secrets.GITHUB_TOKEN }}

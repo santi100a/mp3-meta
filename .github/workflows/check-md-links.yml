@@ -1,0 +1,19 @@
+name: Check for broken Markdown links
+
+on:
+  schedule:
+    - cron: 0 0 * * *
+  workflow_dispatch: {}
+
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 19.x
+      - name: Install dependencies
+        run: yarn
+      - name: Run link check
+        run: yarn check-links

@@ -1,0 +1,128 @@
+name: Pull Request check
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+jobs:
+  say-hi:
+    continue-on-error: true
+    permissions:
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for existence of comment
+        id: comment
+        run: |
+          yarn init --yes
+          yarn add --optional @octokit/rest@20.0.1
+          node --eval="
+          (async function() {
+            const { Octokit } = require('@octokit/rest');
+            const github = new Octokit({ auth: process.env.GITHUB_TOKEN });
+            const issueNumber = '${{ github.event.pull_request.number }}';
+            const owner = '${{ github.repository_owner }}';
+            const repo = '${{ github.repository }}'.replace(owner + '/', '');
+
+            const { data: comments } = await github.issues.listComments({
+              owner,
+              repo,
+              issue_number: issueNumber,
+            });
+
+            console.log(comments.some(comment => comment.body.includes('Hi, ${{ github.actor }}')));
+          })();
+            " >> hi.txt
+          echo "result=$(cat hi.txt | grep -E 'true|false')" >> $GITHUB_OUTPUT
+
+      - name: Say hi
+        uses: jungwinter/comment@v1
+        if: steps.comment.outputs.result == 'false'
+        with:
+          type: create
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue_number: ${{ github.event.pull_request.number }}
+          body: |
+            Hi, ${{ github.actor }}!
+            Make sure to comply with the [Code of Conduct](https://github.com/${{ github.repository }}/blob/main/CODE_OF_CONDUCT.md), [security policy](https://github.com/${{ github.repository }}/blob/main/SECURITY.md) and [contribution guidelines](https://github.com/${{ github.repository }}/blob/main/CONTRIBUTING.md) before contributing to this repo.
+  test:
+    permissions:
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+      - name: Install dependencies
+        run: yarn
+
+      - name: Validate package.json
+        run: yarn validate-package-json
+
+      - name: Validate Markdown links
+        run: yarn check-links
+
+      - name: Run ESLint
+        run: yarn lint
+
+      - name: Build code
+        run: yarn build
+
+  assign-and-ping:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    needs: test
+    if: success()
+    permissions:
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 19.x
+
+      - name: Assign pull request to yourself
+        run: |
+          yarn init --yes
+          yarn add --optional @octokit/rest@20.0.1
+          node --eval="
+            const { Octokit } = require('@octokit/rest');
+            const github = new Octokit({ auth: process.env.GITHUB_TOKEN });
+            (async function() {
+              await github.issues.addAssignees({
+                owner: '${{ github.repository_owner }}',
+                repo: '${{ github.repository }}'.replace('${{ github.repository_owner }}/', ''),
+                issue_number: ${{ github.event.pull_request.number }},
+                assignees: ['${{ github.repository_owner }}'],
+              });
+            })();
+          "
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Request code review
+        run: |
+          yarn init --yes
+          yarn add --optional @octokit/rest@20.0.1
+          node --eval="
+            const { Octokit } = require('@octokit/rest');
+            const github = new Octokit({ auth: process.env.GITHUB_TOKEN });
+            (async function() {
+              await github.pulls.requestReviewers({
+                owner: '${{ github.repository_owner }}',
+                repo: '${{ github.repository }}'.replace('${{ github.repository_owner }}/', ''),
+                pull_number: ${{ github.event.pull_request.number }},
+                reviewers: ['${{ github.repository_owner }}'],
+              });
+            })();
+          "
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

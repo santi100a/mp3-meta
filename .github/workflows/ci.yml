@@ -1,0 +1,121 @@
+name: Continuous Integration (CI)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - src/**/*.*
+
+jobs:
+  test:
+    outputs:
+      rel: ${{ steps.commit.outputs.rel }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 19.x
+          always-auth: true
+
+      - name: Check commit message
+        id: commit
+        run: |
+          COMMIT_MSG=$(/usr/bin/git log --format=%B -n 1 HEAD)
+          STRING=$(echo $COMMIT_MSG | (grep -E "infra:|docs:|lint:|code-style:" || echo ''))
+
+          if [ -z "$STRING" ]; then
+           echo "rel=1" >> $GITHUB_OUTPUT
+           echo "IS_RELEASE_COMMIT=1" >> $GITHUB_ENV
+          else 
+           echo "This commit will NOT trigger a release."
+
+           echo "rel=0" >> $GITHUB_OUTPUT
+           echo "IS_RELEASE_COMMIT=0" >> $GITHUB_ENV
+          fi
+
+      - name: Install dependencies
+        run: yarn
+
+      - name: Validate Markdown links
+        run: yarn check-links
+
+      - name: Validate package.json
+        run: yarn validate-package-json
+
+      - name: Run ESLint
+        run: yarn lint
+
+      - name: Build source code
+        run: yarn build
+  release:
+    needs: test
+    if: needs.test.outputs.rel == 1 || needs.test.outputs.rel == '1'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Generate tag, release name, and body
+        run: |
+          TAG_NAME="v$(jq -r '.version' package.json)"
+          RELEASE_NAME="Release $TAG_NAME"
+          BODY=$(sed -n "/## Version $(jq -r '.version' package.json | sed 's/\./\\\./g')/,/##/p" CHANGELOG.md | sed '1d;/^##/d')
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+          echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_ENV
+          echo "$BODY" >> release.md
+      - name: Create release
+        uses: ncipollo/release-action@v1.12.0
+        with:
+          allowUpdates: true
+          tag: ${{ env.TAG_NAME }}
+          name: ${{ env.RELEASE_NAME }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          bodyFile: release.md
+          draft: false
+          prerelease: false
+  publish-npm:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 19.x
+          always-auth: true
+      - name: Install dependencies
+        run: yarn
+      - name: Build code
+        run: yarn build
+      - name: Set authentication token
+        run: |
+          npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_AUTH_TOKEN }}
+      - name: Publish to NPM
+        run: yarn publish --access public
+  publish-gpr:
+    needs: release
+    permissions:
+      packages: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 19.x
+          always-auth: true
+      - name: Install dependencies
+        run: yarn
+      - name: Build code
+        run: yarn build
+
+      - name: Set authentication token
+        run: |
+          npm set //npm.pkg.github.com/:_authToken ${{ secrets.GPR_AUTH_TOKEN }}
+      - name: Publish to GPR
+        run: yarn publish --access public --registry https://npm.pkg.github.com/
