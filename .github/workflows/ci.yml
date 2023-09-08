@@ -49,6 +49,19 @@ jobs:
 
       - name: Build source code
         run: yarn build
+
+      - name: Compile executables
+        run: yarn compile
+
+      - name: Create artifact
+        run: tar -czf binaries.tgz bin
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: executables
+          path: binaries.tgz
+
   release:
     needs: test
     if: needs.test.outputs.rel == 1 || needs.test.outputs.rel == '1'
@@ -66,6 +79,12 @@ jobs:
           echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
           echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_ENV
           echo "$BODY" >> release.md
+      - name: Download executables
+        uses: actions/download-artifact@v3
+        with:
+          name: executables
+      - name: Extract executables
+        run: tar -xf binaries.tgz bin
       - name: Create release
         uses: ncipollo/release-action@v1.12.0
         with:
@@ -76,6 +95,7 @@ jobs:
           bodyFile: release.md
           draft: false
           prerelease: false
+          artifacts: bin/*.*,bin/*,binaries.tgz
   publish-npm:
     needs: release
     runs-on: ubuntu-latest

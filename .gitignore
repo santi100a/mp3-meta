@@ -1,5 +1,6 @@
 node_modules
-*.exe
 ignore-*.*
+ignore-*
 *.log
 coverage
+bin

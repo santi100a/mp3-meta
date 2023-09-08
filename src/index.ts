@@ -109,12 +109,11 @@ const {
 			(tags.image as ImageObject)?.type.name ?? '<unknown>'
 		);
 		await writeFile(dumpCover, imageBuffer).then(() =>
-		console.log(colorize('\u2713 Operation succeeded.', 'green'))
+			console.log(colorize('\u2713 Operation succeeded.', 'green'))
 		);
 	} else {
-		if (output === undefined) fail(
-			new Error("required option '-o, --output <outfile>' not specified")
-		);
+		if (output === undefined)
+			fail(new Error("required option '-o, --output <outfile>' not specified"));
 		const originalMeta = read(buf);
 		const originalImage = originalMeta.image
 			? Buffer.from((originalMeta.image as ImageObject).imageBuffer)

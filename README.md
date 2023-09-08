@@ -20,5 +20,5 @@ genre and cover art into your MP3 files.
 
 ## Usage
 
-Access the CLI by using the `mp3meta` command or `npx @santi100a/mp3-meta` after running
-one of the above commands.
+Access the CLI by using `npx @santi100a/mp3-meta` after running one of the above commands, or
+by downloading an executable from the releases and running it.

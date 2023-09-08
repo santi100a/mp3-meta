@@ -1,14 +1,16 @@
 {
 	"name": "@santi100a/mp3-meta",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"description": "Santi's MP3-Meta CLI: Add the ID3 tags!",
 	"main": "dist/index.js",
-	"bin": {
-		"mp3meta": "node dist/index.js"
-	},
+	"bin": "dist/index.js",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/santi100a/mp3-meta"
+	},
+	"funding": {
+		"type": "github",
+		"url": "https://github.com/sponsors/santi100a"
 	},
 	"author": "santi100a <santyrojaprieto9+npm@gmail.com>",
 	"license": "MIT",
@@ -26,7 +28,8 @@
 		"@santi100/coloring-lib": "^1.1.2",
 		"commander": "^11.0.0",
 		"file-type-cjs": "^1.0.7",
-		"node-id3": "^0.2.6"
+		"node-id3": "^0.2.6",
+		"pkg": "^5.8.1"
 	},
 	"keywords": [
 		"santi100a",
@@ -41,6 +44,7 @@
 	"scripts": {
 		"lint": "eslint src/**/*.ts",
 		"build": "tsc",
+		"compile": "pkg -t node16-linux,node16-macos,node16-win -C GZip . --out-path bin/",
 		"dev": "tsc --watch",
 		"prettify": "prettier --write **/*.*",
 		"check-links": "remark --frail *.md",
